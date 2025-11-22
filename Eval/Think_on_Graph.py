@@ -430,14 +430,20 @@ class TogV3Retriever:
         # Use LLM to generate natural language answer from triples
         triples_context = "\n".join([f"{i+1}. {triple}" for i, triple in enumerate(triples)])
         
-        prompt = f"""Based on the following knowledge graph triples, please answer the question in a clear and concise manner.
+        prompt = f"""Based on the provided Knowledge Graph Triples, compose a comprehensive and detailed narrative answer to the question.
 
-Question: {query}
+Guidelines:
+1. *Format:* Write as a continuous, cohesive article (prose only). Do not use bullet points or lists.
+2. *Tone:* Use an objective, encyclopedic, and educational tone.
+3. *Structure:* Smoothly integrate definitions, symptoms, classifications, and complications. Ensure logical transitions between sentences.
+4. *Detail:* Elaborate on the relationships found in the triples to provide a full explanation.
 
 Knowledge Triples:
 {triples_context}
 
-Please provide a comprehensive answer based on the given information."""
+Question: {query}
+
+Detailed Answer:"""
 
         messages = [
             {"role": "system", "content": "You are a helpful assistant that answers questions based on knowledge graph information."},
