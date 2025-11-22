@@ -334,7 +334,11 @@ def ground_concepts_to_ontology(induced_concepts: Dict[str, str], use_umls: bool
 
     try:
         import csv
-        csv_path = LOG_DIR / "phase3_grounded_nodes.csv"
+        # Use Eval/import/data directory for output
+        base_dir = Path(__file__).parent.parent
+        output_dir = base_dir / "Eval" / "import" / "data"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = output_dir / "phase3_grounded_nodes.csv"
         with open(csv_path, 'w', encoding='utf-8', newline='') as csvf:
             fieldnames = [
                 "clean_node",
