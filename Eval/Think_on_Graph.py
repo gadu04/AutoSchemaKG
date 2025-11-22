@@ -430,14 +430,20 @@ class TogV3Retriever:
         # Use LLM to generate natural language answer from triples
         triples_context = "\n".join([f"{i+1}. {triple}" for i, triple in enumerate(triples)])
         
-        prompt = f"""Based on the following knowledge graph triples, please answer the question in a clear and concise manner.
+        prompt = f"""Based on the provided Knowledge Graph Triples, compose a comprehensive and detailed narrative answer to the question.
 
-Question: {query}
+Guidelines:
+1. **Format:** Write as a continuous, cohesive article (prose only). Do not use bullet points or lists.
+2. **Tone:** Use an objective, encyclopedic, and educational tone.
+3. **Structure:** Smoothly integrate definitions, symptoms, classifications, and complications. Ensure logical transitions between sentences.
+4. **Detail:** Elaborate on the relationships found in the triples to provide a full explanation.
 
 Knowledge Triples:
 {triples_context}
 
-Please provide a comprehensive answer based on the given information."""
+Question: {query}
+
+Detailed Answer:"""
 
         messages = [
             {"role": "system", "content": "You are a helpful assistant that answers questions based on knowledge graph information."},
@@ -492,6 +498,71 @@ def load_kg_from_neo4j(uri: str, user: str, password: str) -> nx.DiGraph:
     return G
 
 
+def process_questions_from_csv(retriever: TogV3Retriever, input_csv_path: str, output_csv_path: str):
+    """Process questions from CSV and save answers."""
+    import csv
+    from tqdm import tqdm
+    
+    print(f"\nProcessing questions from: {input_csv_path}")
+    
+    # Read questions
+    questions = []
+    with open(input_csv_path, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            question = row.get('question', '').strip()
+            if question:  # Skip empty questions
+                questions.append(question)
+    
+    print(f"Found {len(questions)} questions to process")
+    
+    # Process each question
+    results = []
+    for i, question in enumerate(tqdm(questions, desc="Answering questions")):
+        
+        print(f"\n{'='*80}")
+        print(f"[Question {i+1}/{len(questions)}]")
+        print(f"Q: {question}")
+        print(f"{'='*80}")
+        
+        try:
+            # Get answer from ToG
+            answer, sources = retriever.retrieve(question, topN=5)
+            print(f"ToG Answer: {answer}")
+            print(f"Sources: {len(sources)} triples")
+            
+            results.append({
+                'question': question,
+                'tog_answer': answer,
+                'num_sources': len(sources),
+                'sources': ' | '.join(sources[:5])  # Store first 5 sources
+            })
+            
+        except Exception as e:
+            print(f"\nError processing question {i+1}: {e}")
+            results.append({
+                'question': question,
+                'tog_answer': f"ERROR: {str(e)}",
+                'num_sources': 0,
+                'sources': ''
+            })
+    
+    # Save results
+    with open(output_csv_path, 'w', encoding='utf-8-sig', newline='') as f:
+        fieldnames = ['question', 'answer']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for result in results:
+            writer.writerow({
+                'question': result['question'],
+                'answer': result['tog_answer']
+            })
+    
+    print(f"\n✓ Results saved to: {output_csv_path}")
+    print(f"  Total questions: {len(questions)}")
+    print(f"  Successfully answered: {sum(1 for r in results if not r['tog_answer'].startswith('ERROR'))}")
+
+
 def main():
     """Example usage of ToG retrieval."""
     # Configuration
@@ -526,24 +597,36 @@ def main():
         qdrant_url="http://localhost:6333"
     )
     
-    # Example queries
-    queries = [
-        "What is diabetes?",
-        "What causes heart disease?",
-        "What are the symptoms of ALS?"
-    ]
+    # Get base directory and setup paths
+    base_dir = Path(__file__).parent.parent
+    input_csv = base_dir / "Eval" / "data" / "1000.csv"
+    output_csv = base_dir / "Eval" / "data" / "ToG_answer.csv"
     
-    for query in queries:
-        print(f"\n{'='*80}")
-        print(f"Query: {query}")
-        print(f"{'='*80}")
+    # Process questions from CSV
+    if input_csv.exists():
+        process_questions_from_csv(retriever, str(input_csv), str(output_csv))
+    else:
+        print(f"\n⚠ Input file not found: {input_csv}")
+        print("Running example queries instead...\n")
         
-        answer, sources = retriever.retrieve(query, topN=5)
+        # Example queries
+        queries = [
+            "What is (are) keratoderma with woolly hair ?",
+            "How many people are affected by keratoderma with woolly hair ?",
+            "What are the genetic changes related to keratoderma with woolly hair ?"
+        ]
         
-        print(f"\nAnswer:\n{answer}")
-        print(f"\nSources ({len(sources)} triples):")
-        for i, source in enumerate(sources[:10]):  # Show first 10
-            print(f"{i+1}. {source}")
+        for query in queries:
+            print(f"\n{'='*80}")
+            print(f"Query: {query}")
+            print(f"{'='*80}")
+            
+            answer, sources = retriever.retrieve(query, topN=5)
+            
+            print(f"\nAnswer:\n{answer}")
+            print(f"\nSources ({len(sources)} triples):")
+            for i, source in enumerate(sources[:10]):  # Show first 10
+                print(f"{i+1}. {source}")
 
 
 if __name__ == "__main__":
