@@ -21,3 +21,7 @@ completion = client.chat.completions.create(
 
 # In ra phản hồi từ model GGUF
 print(completion.choices[0].message.content)
+
+# ------------------------------------------------------------
+# unified header — 2025-12-16.
+# ------------------------------------------------------------
