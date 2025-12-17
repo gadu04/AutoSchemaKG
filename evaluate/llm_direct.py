@@ -78,7 +78,6 @@ def process_questions_from_csv(llm: LLMGenerator, input_csv_path: str, output_cs
         print(f"{'='*80}")
         
         try:
-            # Get answer from LLM
             answer = llm.answer_question(question)
             print(f"LLM Answer: {answer}")
             
@@ -121,8 +120,8 @@ def main():
     
     # Get base directory and setup paths
     base_dir = Path(__file__).parent.parent
-    input_csv = base_dir / "Eval" / "data" / "1000.csv"
-    output_csv = base_dir / "Eval" / "data" / "llm_answer.csv"
+    input_csv = base_dir / "evaluate" / "data" / "1000.csv"
+    output_csv = base_dir / "evaluate" / "data" / "llm_answer.csv"
     
     # Process questions from CSV
     if input_csv.exists():

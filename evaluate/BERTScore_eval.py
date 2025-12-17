@@ -39,21 +39,17 @@ def load_csv_data(csv_path: str) -> List[Dict[str, str]]:
 
 def calculate_bertscore(predictions: List[str], references: List[str]) -> Dict[str, float]:
     """Calculate BERTScore using CUDA."""
-    # Handle empty strings
     predictions = [p if p.strip() else "no answer" for p in predictions]
     references = [r if r.strip() else "no answer" for r in references]
     
-    # Calculate BERTScore
-    # model_type: 'microsoft/deberta-xlarge-mnli' is best but heavy. 
-    # If GPU VRAM < 8GB, consider switching to 'roberta-large'
     P, R, F1 = score(
         predictions, 
         references, 
         model_type='microsoft/deberta-xlarge-mnli',
         lang='en',
         verbose=True,
-        device='cuda', # <--- BẮT BUỘC DÙNG CUDA
-        batch_size=4   # <--- Tăng tốc độ xử lý theo batch trên GPU
+        device='cuda', 
+        batch_size=4   
     )
     
     return {
@@ -68,17 +64,15 @@ def main():
     print("BERTScore Evaluation: ToG vs LLM (CUDA MODE + CSV EXPORT)")
     print("="*80)
     
-    # 1. Bắt buộc kiểm tra GPU
     device = check_cuda_availability()
     
-    # Setup paths
     base_dir = Path(__file__).parent.parent
-    ground_truth_path = base_dir / "Eval" / "data" / "1000.csv"
+    ground_truth_path = base_dir / "evaluate" / "data" / "1000.csv"
     
     # Đường dẫn file kết quả
-    tog_answer_path = base_dir / "Eval" / "data" / "ToG_answer.csv"
-    llm_answer_path = base_dir / "Eval" / "data" / "llm_answer.csv"
-    results_path = base_dir / "Eval" / "data" / "bertscore_evaluation.csv"
+    tog_answer_path = base_dir / "evaluate" / "data" / "ToG_answer.csv"
+    llm_answer_path = base_dir / "evaluate" / "data" / "llm_answer.csv"
+    results_path = base_dir / "evaluate" / "data" / "bertscore_evaluation.csv"
     
     # Load data
     print("\nLoading data...")
@@ -94,12 +88,10 @@ def main():
     print(f"ToG answers: {len(tog_answers)} entries")
     print(f"LLM answers: {len(llm_answers)} entries")
     
-    # Extract answers
     references = [row.get('answer', '') or row.get('Answer', '') for row in ground_truth]
     tog_predictions = [row.get('answer', '') or row.get('Answer', '') for row in tog_answers]
     llm_predictions = [row.get('answer', '') or row.get('Answer', '') for row in llm_answers]
     
-    # Ensure all lists have same length
     min_len = min(len(references), len(tog_predictions))
     if llm_predictions:
         min_len = min(min_len, len(llm_predictions))
@@ -111,7 +103,6 @@ def main():
     
     print(f"\nEvaluating {min_len} question-answer pairs on GPU...\n")
     
-    # Calculate BERTScore for ToG
     print("="*80)
     print("Calculating BERTScore for ToG...")
     print("="*80)
@@ -119,7 +110,6 @@ def main():
     
     print(f"ToG Results -> F1: {tog_scores['f1']:.4f} | Precision: {tog_scores['precision']:.4f} | Recall: {tog_scores['recall']:.4f}")
     
-    # Calculate BERTScore for LLM
     llm_scores = None
     if llm_predictions:
         print("\n" + "="*80)
@@ -128,21 +118,16 @@ def main():
         llm_scores = calculate_bertscore(llm_predictions, references)
         print(f"LLM Results -> F1: {llm_scores['f1']:.4f} | Precision: {llm_scores['precision']:.4f} | Recall: {llm_scores['recall']:.4f}")
         
-        # Comparison
         print("\n" + "="*80)
         print(f"F1 Difference (ToG - LLM): {tog_scores['f1'] - llm_scores['f1']:+.4f}")
         print("="*80)
     
-    # === SAVE RESULTS TO CSV ===
     print(f"\nSaving results to {results_path}...")
     
-    # Chuẩn bị dữ liệu để ghi
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # Tạo danh sách các dòng dữ liệu (Rows)
     rows_to_write = []
     
-    # Dòng kết quả cho ToG
     rows_to_write.append({
         'Timestamp': timestamp,
         'Model': 'ToG',
@@ -154,7 +139,6 @@ def main():
         'Model_Type': 'microsoft/deberta-xlarge-mnli'
     })
     
-    # Dòng kết quả cho LLM (nếu có)
     if llm_scores:
         rows_to_write.append({
             'Timestamp': timestamp,
@@ -167,17 +151,14 @@ def main():
             'Model_Type': 'microsoft/deberta-xlarge-mnli'
         })
 
-    # Fieldnames cho CSV
     fieldnames = ['Timestamp', 'Model', 'Samples', 'Precision', 'Recall', 'F1_Score', 'Device', 'Model_Type']
     
-    # Ghi file (Chế độ 'a' để append - thêm vào cuối file thay vì ghi đè)
     file_exists = results_path.exists()
     
     try:
         with open(results_path, 'a', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             
-            # Chỉ ghi header nếu file chưa tồn tại
             if not file_exists:
                 writer.writeheader()
             

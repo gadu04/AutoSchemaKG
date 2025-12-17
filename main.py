@@ -16,11 +16,9 @@ import json
 import pickle
 from pathlib import Path
 
-# Add the project root to the Python path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-# Load environment variables from .env file if it exists
 try:
     from dotenv import load_dotenv
     env_file = project_root / ".env"
@@ -42,12 +40,9 @@ from pipeline.phase_4_kg_construction import build_knowledge_graph, export_graph
 from utils.visualization import print_pipeline_summary, save_graph_visualization
 
 
-# =============================================================================
 # CẤU HÌNH CHẠY (DEBUG CONFIG)
-# =============================================================================
 # Đặt True nếu bạn muốn bỏ qua Phase 1 & 2 và dùng file Phase2_Response.pkl đã lưu
 RESUME_FROM_PHASE_3 = False 
-# =============================================================================
 
 def main():
     """
@@ -58,9 +53,7 @@ def main():
     print("=" * 80)
     print()
     
-    # Load configuration from environment variables (set in .env file)
     use_real_llm = os.getenv("USE_REAL_LLM", "false").lower() == "true"
-    # input_file = os.getenv("INPUT_FILE", "data/parsed/AMA_Family_Guide_content.md")
     input_dir = os.getenv("INPUT_DIR", "data/parsed/")
     output_dir = os.getenv("OUTPUT_DIR", "output")
     model_name = os.getenv("MODEL_NAME", "local-model")
@@ -71,24 +64,18 @@ def main():
     if use_real_llm:
         print(f"  - LM Studio URL: {lm_studio_url}")
         print(f"  - Model: {model_name}")
-    # print(f"  - Input File: {input_file}")
     print(f"  - Input Directory: {input_dir}")
     print(f"  - Output Directory: {output_dir}")
     print(f"  - Resume Mode: {'ON (Skipping P1/P2)' if RESUME_FROM_PHASE_3 else 'OFF (Running full pipeline)'}")
     print()
     
-    # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
     
-    # Variables to hold state across phases
     all_triples = []
     unique_nodes = set()
     grounded_nodes = []
 
-    # =========================================================================
-    # LOGIC: RUN PHASE 1 & 2 OR RESUME FROM CHECKPOINT
-    # =========================================================================
-    
+    # LOGIC: RUN PHASE 1 & 2 OR RESUME FROM CHECKPOINT  
     if RESUME_FROM_PHASE_3:
         print("-" * 80)
         print("RESUMING PIPELINE FROM PHASE 2 CHECKPOINT")
@@ -115,9 +102,7 @@ def main():
             return
 
     else:
-        # =========================================================================
         # PHASE 1: DOCUMENT INGESTION & PREPROCESSING (STUBBED)
-        # =========================================================================
         print("-" * 80)
         print("PHASE 1: DOCUMENT INGESTION & PREPROCESSING")
         print("-" * 80)
@@ -143,9 +128,7 @@ def main():
             print(f"✗ Phase 1 Failed: {e}")
             return
         
-        # =========================================================================
         # PHASE 2: TRIPLE EXTRACTION
-        # =========================================================================
         print("-" * 80)
         print("PHASE 2: TRIPLE EXTRACTION")
         print("-" * 80)
@@ -163,26 +146,21 @@ def main():
             print(f"  - Unique Nodes: {len(unique_nodes)}")
             print()
             
-            # -------------------------------------------------------
-            # [NEW] SAVE PHASE 2 CHECKPOINT
-            # -------------------------------------------------------
-            print(f"💾 Saving Phase 2 Checkpoints to '{output_dir}'...")
+            # SAVE PHASE 2 CHECKPOINT
+            print(f"Saving Phase 2 Checkpoints to '{output_dir}'...")
             
             checkpoint_data = {
                 "all_triples": all_triples,
                 "unique_nodes": unique_nodes
             }
             
-            # 1. Save Pickle (For Machine/Resume)
             pkl_path = os.path.join(output_dir, "Phase2_Response.pkl")
             with open(pkl_path, "wb") as f:
                 pickle.dump(checkpoint_data, f)
             print(f"   -> Saved Checkpoint (Pickle): {pkl_path}")
             
-            # 2. Save JSON (For Human Reading)
             json_path = os.path.join(output_dir, "Phase2_Response.json")
             
-            # Helper for serializing Sets
             def set_default(obj):
                 if isinstance(obj, set): return list(obj)
                 return str(obj)
@@ -198,9 +176,7 @@ def main():
             traceback.print_exc()
             return
     
-    # =========================================================================
     # PHASE 3: HYBRID SCHEMA INDUCTION & ONTOLOGY GROUNDING
-    # =========================================================================
     print("-" * 80)
     print("PHASE 3: HYBRID SCHEMA INDUCTION & ONTOLOGY GROUNDING")
     print("-" * 80)
@@ -228,13 +204,10 @@ def main():
         print(f"✓ Part 3b Complete. Grounded {len(grounded_nodes)} nodes to ontology IDs.")
         print()
 
-        # -------------------------------------------------------
-        # [NEW] SAVE PHASE 3 OUTPUT
-        # -------------------------------------------------------
-        print(f"💾 Saving Phase 3 Output...")
+        # SAVE PHASE 3 OUTPUT
+        print(f"Saving Phase 3 Output...")
         phase3_json_path = os.path.join(output_dir, "Phase3_Response.json")
         
-        # Helper for serializing objects
         def obj_dict_serializer(obj):
             if hasattr(obj, '__dict__'): return obj.__dict__
             return str(obj)
@@ -248,9 +221,7 @@ def main():
         print(f"✗ Part 3b Failed: {e}")
         return
     
-    # =========================================================================
     # PHASE 4: KNOWLEDGE GRAPH CONSTRUCTION
-    # =========================================================================
     print("-" * 80)
     print("PHASE 4: KNOWLEDGE GRAPH CONSTRUCTION")
     print("-" * 80)
@@ -268,18 +239,14 @@ def main():
         traceback.print_exc()
         return
     
-    # =========================================================================
     # FINALIZATION
-    # =========================================================================
     print("=" * 80)
     print("PIPELINE EXECUTION COMPLETE")
     print("=" * 80)
     print()
     
-    # Print summary
     print_pipeline_summary(text_segments if not RESUME_FROM_PHASE_3 else [], all_triples, grounded_nodes, knowledge_graph)
     
-    # Save visualization
     try:
         viz_path = os.path.join(output_dir, "knowledge_graph.png")
         save_graph_visualization(knowledge_graph, viz_path)

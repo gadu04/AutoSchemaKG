@@ -100,7 +100,6 @@ def get_tog_answer(question: str) -> tuple:
         return "Error: ToG retriever not initialized", []
     
     try:
-        # Read topN from environment
         top_paths = int(os.getenv("TOG_TOP_PATHS", "10"))
         answer, triples = retriever.retrieve(question, topN=top_paths)
         return answer, triples

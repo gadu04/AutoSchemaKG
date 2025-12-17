@@ -22,7 +22,6 @@ from pathlib import Path
 from openai import OpenAI
 
 
-# Initialize log file path
 LOG_DIR = Path(os.getenv("OUTPUT_DIR", "output"))
 LOG_FILE = LOG_DIR / "llm_api_responses.log"
 
@@ -32,7 +31,6 @@ def _clean_json_string(json_str: str) -> str:
     Clean malformed JSON from LLM output.
     Fixes common issues like missing commas, unescaped quotes, etc.
     """
-    # Remove markdown wrappers
     json_str = json_str.strip()
     if json_str.startswith("```json"):
         json_str = json_str[7:]
@@ -62,11 +60,9 @@ def _clean_json_string(json_str: str) -> str:
     lines = json_str.split('\n')
     fixed_lines = []
     for line in lines:
-        # Skip lines that are already properly quoted
         if '":' in line or '": ' in line:
             fixed_lines.append(line)
         else:
-            # Replace single quotes with double quotes only if not already quoted
             if '"' not in line:
                 line = line.replace("'", '"')
             fixed_lines.append(line)
@@ -91,21 +87,18 @@ def _extract_json_from_text(text: str) -> str:
     """
     text = text.strip()
     
-    # Find first { or [
     start_idx = max(text.find('{'), text.find('['))
-    if start_idx == -2:  # both not found
+    if start_idx == -2: 
         start_idx = text.find('{')
     
     if start_idx == -1:
         raise ValueError("No JSON object found in response")
     
-    # Find matching closing bracket
     if text[start_idx] == '{':
         closing = '}'
     else:
         closing = ']'
     
-    # Work backwards from end to find matching bracket
     end_idx = text.rfind(closing)
     if end_idx == -1 or end_idx <= start_idx:
         raise ValueError("No valid JSON closing bracket found")

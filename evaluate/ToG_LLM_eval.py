@@ -54,9 +54,9 @@ def main():
     
     # Setup paths
     base_dir = Path(__file__).parent.parent
-    ground_truth_path = base_dir / "Eval" / "data" / "1000.csv"
-    tog_answer_path = base_dir / "Eval" / "data" / "ToG_answer.csv"
-    llm_answer_path = base_dir / "Eval" / "data" / "llm_answer.csv"
+    ground_truth_path = base_dir / "evaluate" / "data" / "1000.csv"
+    tog_answer_path = base_dir / "evaluate" / "data" / "ToG_answer.csv"
+    llm_answer_path = base_dir / "evaluate" / "data" / "llm_answer.csv"
     
     # Load data
     print("\nLoading data...")

@@ -6,7 +6,6 @@ import streamlit as st
 import requests
 import os
 
-# Page config
 st.set_page_config(
     page_title="Medical QA - Think on Graph",
     page_icon="🕸️",
@@ -36,7 +35,6 @@ with st.sidebar:
     **Knowledge Source:** Neo4j Medical KG
     """)
     
-    # Show API connection info
     st.markdown("---")
     st.caption(f"**API Endpoint:** {API_URL}")
 
@@ -53,11 +51,10 @@ if st.button(" Get Answer", type="primary"):
     else:
         with st.spinner(" Retrieving from knowledge graph..."):
             try:
-                # Call API
                 response = requests.post(
                     f"{API_URL}/api/ask",
                     json={"question": question},
-                    timeout=1000  # Add timeout to prevent hanging
+                    timeout=120 
                 )
                 
                 if response.status_code == 200:
@@ -66,10 +63,8 @@ if st.button(" Get Answer", type="primary"):
                     st.markdown("---")
                     st.subheader(" Answer")
                     
-                    # Display ToG answer
                     st.success(result["tog_answer"])
                     
-                    # Show triples in expandable section
                     st.markdown("---")
                     with st.expander(f" Knowledge Triples ({len(result['triples'])} total)", expanded=True):
                         for i, triple in enumerate(result["triples"], 1):
@@ -84,7 +79,6 @@ if st.button(" Get Answer", type="primary"):
             except Exception as e:
                 st.error(f" Error: {str(e)}")
 
-# Footer
 st.markdown("---")
 st.markdown(
     """

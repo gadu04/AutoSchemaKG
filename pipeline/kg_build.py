@@ -114,7 +114,6 @@ class Neo4jImporter:
         
         with open(csv_file_path, 'r', encoding='utf-8-sig', errors='ignore') as f:
             reader = csv.DictReader(f)
-            # Clean column names by stripping whitespace and BOM
             reader.fieldnames = [name.strip() for name in reader.fieldnames]
             relationships = list(reader)
         
@@ -204,11 +203,9 @@ class Neo4jImporter:
 
 
 def main():
-    # Get base directory
     base_dir = Path(__file__).parent.parent.parent
     
-    # CSV file paths - using Eval/import/data directory
-    data_dir = base_dir / "Eval" / "import" / "data"
+    data_dir = base_dir / "evaluate" / "import" / "data"
     nodes_csv = data_dir / "neo4j_nodes.csv"
     relationships_csv = data_dir / "neo4j_relationships.csv"
     
@@ -224,27 +221,22 @@ def main():
     importer = Neo4jImporter(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
     
     try:
-        # Optional: Clear existing data
         clear_db = input("Clear existing database? (y/N): ").lower()
         if clear_db == 'y':
             importer.clear_database()
         
-        # Create constraints
         importer.create_constraints()
         
-        # Import nodes
         if os.path.exists(nodes_csv):
             importer.import_nodes(str(nodes_csv))
         else:
             print(f"Warning: Nodes file not found at {nodes_csv}")
         
-        # Import relationships
         if os.path.exists(relationships_csv):
             importer.import_relationships(str(relationships_csv))
         else:
             print(f"Warning: Relationships file not found at {relationships_csv}")
         
-        # Show statistics
         importer.get_statistics()
         
         print("\n✓ Import completed successfully!")

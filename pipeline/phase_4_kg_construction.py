@@ -35,7 +35,6 @@ def get_canonical_event_name(raw_event_name: str) -> str:
     if norm in canonical_event_map:
         return canonical_event_map[norm]
 
-    # Remove old prefix completely
     clean = re.sub(r'^\[?(Event|Entity):\s*', '', raw_event_name.strip(), flags=re.I)
     clean = re.sub(r'\]$', '', clean)
 
@@ -112,7 +111,6 @@ def _determine_node_type(node_name: str, all_triples: List[Dict]) -> str:
       2) If name has explicit [Entity:] prefix -> 'entity'
       3) Else fallback to counting context in triples (majority)
     """
-    # 1) explicit prefix check (highest priority)
     if isinstance(node_name, str):
         low = node_name.strip()
         if low.startswith("[Event:") or low.startswith("Event:"):
@@ -120,7 +118,6 @@ def _determine_node_type(node_name: str, all_triples: List[Dict]) -> str:
         if low.startswith("[Entity:") or low.startswith("Entity:"):
             return 'entity'
 
-    # 2) fallback: count in triples
     entity_count = 0
     event_count = 0
     for triple in all_triples:
@@ -135,7 +132,6 @@ def _determine_node_type(node_name: str, all_triples: List[Dict]) -> str:
             elif triple.get('tail_type') == 'event':
                 event_count += 1
 
-    # if equal or more entity mentions -> entity else event
     return 'entity' if entity_count >= event_count else 'event'
 
 
@@ -157,14 +153,12 @@ def get_graph_statistics(kg: nx.MultiDiGraph) -> Dict:
         'is_connected': nx.is_weakly_connected(kg),
     }
     
-    # Count nodes by type
     entity_nodes = [n for n, d in kg.nodes(data=True) if d.get('node_type') == 'entity']
     event_nodes = [n for n, d in kg.nodes(data=True) if d.get('node_type') == 'event']
     
     stats['entity_nodes'] = len(entity_nodes)
     stats['event_nodes'] = len(event_nodes)
     
-    # Count edges by triple type
     edge_types = {}
     for u, v, data in kg.edges(data=True):
         triple_type = data.get('triple_type', 'unknown')
@@ -172,7 +166,6 @@ def get_graph_statistics(kg: nx.MultiDiGraph) -> Dict:
     
     stats['edge_types'] = edge_types
     
-    # Find most connected nodes
     if kg.number_of_nodes() > 0:
         degrees = dict(kg.degree())
         top_nodes = sorted(degrees.items(), key=lambda x: x[1], reverse=True)[:5]
@@ -198,19 +191,16 @@ def export_graph_to_formats(kg: nx.MultiDiGraph, output_dir: str) -> Dict[str, s
     os.makedirs(output_dir, exist_ok=True)
     exported_files = {}
     
-    # Export to GraphML (readable by graph analysis tools)
     graphml_path = os.path.join(output_dir, "knowledge_graph.graphml")
     nx.write_graphml(kg, graphml_path)
     exported_files['graphml'] = graphml_path
     
-    # Export to JSON for web visualization
     json_path = os.path.join(output_dir, "knowledge_graph.json")
     graph_data = nx.node_link_data(kg)
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(graph_data, f, indent=2)
     exported_files['json'] = json_path
     
-    # Export to edge list (simple format)
     edgelist_path = os.path.join(output_dir, "knowledge_graph_edges.txt")
     nx.write_edgelist(kg, edgelist_path, data=True)
     exported_files['edgelist'] = edgelist_path
@@ -243,7 +233,6 @@ def export_graph_to_neo4j_csv(kg: nx.MultiDiGraph, output_dir: str) -> Dict[str,
     nodes_path = os.path.join(output_dir, "neo4j_nodes.csv")
     rels_path = os.path.join(output_dir, "neo4j_relationships.csv")
 
-    # Write nodes
     with open(nodes_path, 'w', newline='', encoding='utf-8-sig') as nf:
         writer = csv.writer(nf)
         writer.writerow([':ID', 'name', 'labels', 'ontology_id', 'ontology_name', 'semantic_type', 'induced_concept', 'original_node', 'uri'])
@@ -258,16 +247,13 @@ def export_graph_to_neo4j_csv(kg: nx.MultiDiGraph, output_dir: str) -> Dict[str,
             uri = data.get('uri', '')
             writer.writerow([name, name, labels, ontology_id, ontology_name, semantic_type, induced_concept, original_node, uri])
 
-    # Write relationships
     with open(rels_path, 'w', newline='', encoding='utf-8-sig') as rf:
         writer = csv.writer(rf)
         writer.writerow([':START_ID', ':END_ID', ':TYPE', 'relation', 'confidence', 'segment_id', 'doc_id'])
-        # For MultiDiGraph with possible multiple edges
         for u, v, key, data in kg.edges(keys=True, data=True):
             start_id = str(u)
             end_id = str(v)
             rel_type = (data.get('relation') or data.get('triple_type') or 'RELATED').upper()
-            # Neo4j relationship type must not contain spaces; sanitize
             rel_type = rel_type.replace(' ', '_')
             relation = data.get('relation', '')
             confidence = data.get('confidence', '')

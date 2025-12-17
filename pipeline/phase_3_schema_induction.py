@@ -8,7 +8,7 @@ Part 3b (UMLS-INTEGRATED): Ontology grounding using UMLS API
 
 import os
 import json
-import re  # <--- QUAN TRỌNG: Đã thêm thư viện này
+import re 
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Set, Optional
@@ -19,9 +19,8 @@ try:
 except ImportError:
     UMLSLoader = None
 
-# =========================================================================
+
 # LOGGING CONFIGURATION
-# =========================================================================
 LOG_DIR = Path(os.getenv("OUTPUT_DIR", "output"))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 PHASE3_LOG_FILE = Path(os.getenv("PHASE3_LOG_FILE", str(LOG_DIR / "phase3_induction_grounding.log")))
@@ -63,13 +62,10 @@ def _log_phase3_summary(induced_count, grounded_count, concept_stats, grounding_
     except Exception: pass
 
 def _print_phase3_progress(stage: str, current: int, total: int) -> None:
-    # Hàm này để giữ tương thích, nhưng logic chính ta đã dùng print trực tiếp
     pass
 
-# =========================================================================
-# CORE FUNCTIONS
-# =========================================================================
 
+# CORE FUNCTIONS
 def dynamically_induce_concepts(unique_nodes: Set[str], all_triples: List[Dict] = None, use_real_llm: bool = False) -> Dict[str, str]:
     """
     Part 3a: Dynamically induce abstract concepts for each node.
@@ -136,12 +132,10 @@ def ground_concepts_to_ontology(induced_concepts: Dict[str, str], use_umls: bool
     processed = 0
     
     for node_name, concept_phrases in induced_concepts.items():
-        # --- PHÂN LOẠI HIỂN THỊ ---
         node_type_label = "ENT"
         if "Event" in node_name or "[Event:" in node_name: 
             node_type_label = "EVT"
         
-        # --- LÀM SẠCH ---
         clean_node_name = _clean_node_text(node_name)
         search_term = clean_node_name 
 
@@ -155,7 +149,6 @@ def ground_concepts_to_ontology(induced_concepts: Dict[str, str], use_umls: bool
         
         if umls_loader and umls_loader.is_available():
             try:
-                # Tìm kiếm
                 all_results = umls_loader.search_concept(search_term)
                 
                 umls_match = None
@@ -202,18 +195,12 @@ def ground_concepts_to_ontology(induced_concepts: Dict[str, str], use_umls: bool
     
     print("\n" + "-"*50)
     
-    # Export CSV
     _export_csv_phase3(grounded_nodes)
     
     return grounded_nodes
 
 
-# =========================================================================
-# HELPER FUNCTIONS (ĐỊNH NGHĨA ĐẦY ĐỦ Ở ĐÂY)
-# =========================================================================
-
 def _clean_node_text(text: str) -> str:
-    # preserve original event type for graph
     cleaned = re.sub(r'\[(Event|Entity):\s*(.*?)\]', r'\2', text)
     return cleaned.strip()
 
@@ -234,7 +221,6 @@ def _export_csv_phase3(grounded_nodes):
     """Xuất file CSV kết quả"""
     try:
         import csv
-        # Use Eval/import/data directory for output
         base_dir = Path(__file__).parent.parent
         output_dir = base_dir / "Eval" / "import" / "data"
         output_dir.mkdir(parents=True, exist_ok=True)

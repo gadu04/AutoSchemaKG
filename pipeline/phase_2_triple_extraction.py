@@ -18,15 +18,15 @@ TRIPLE TYPES:
 from typing import List, Dict, Set, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from llm_api.interface import call_llm_for_triples
-from tqdm import tqdm  # Import thư viện Progress Bar
+from tqdm import tqdm 
 import os
 import json
 from datetime import datetime
 from pathlib import Path
 
-# CẤU HÌNH SỐ LUỒNG (THREADS)
-# Với RTX 3080 10GB + Llama 3 8B, mức 4-5 là tối ưu.
-MAX_WORKERS = 5
+# CẤU HÌNH SỐ LUỒNG
+# Với RTX 5080 16GB + Llama 3 8B, mức 9-10 là tối ưu.
+MAX_WORKERS = 10
 
 # Replace hard-coded path with env-configurable path
 LOG_DIR = Path(os.getenv("OUTPUT_DIR", "output"))
@@ -40,7 +40,6 @@ def _append_phase2_api_log(entry: dict):
         with open(_PHASE2_API_LOG, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except Exception as e:
-        # never fail the extractor because of logging
         print(f"  ⚠ Warning: failed to write phase2 api log: {e}")
 
 
@@ -68,41 +67,30 @@ class TripleExtractor:
         print(f"  🚀 Starting Parallel Extraction on {total_segments} segments with {MAX_WORKERS} threads...")
         print(f"  ⚡ GPU Utilization target: MAX POWER")
 
-        # Sử dụng ThreadPoolExecutor để chạy đa luồng
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            # Submit tất cả các task vào hàng đợi
             future_to_idx = {
                 executor.submit(self._process_single_segment, segment, idx): idx 
                 for idx, segment in enumerate(text_segments, 1)
             }
             
-            # Khởi tạo thanh Progress Bar (TQDM)
-            # ncols=100: độ rộng thanh hiển thị
-            # unit='seg': đơn vị đếm là segment
             with tqdm(total=total_segments, desc="  Processing", unit="seg", ncols=100) as pbar:
                 for future in as_completed(future_to_idx):
                     idx = future_to_idx[future]
                     
                     try:
-                        # Lấy kết quả từ luồng
                         segment_triples = future.result()
                         
                         if segment_triples:
                             self.all_triples.extend(segment_triples)
-                            # Cập nhật dòng thông tin phụ (số triple tìm thấy trong segment này)
                             pbar.set_postfix_str(f"Found {len(segment_triples)} triples", refresh=False)
-                        
-                        # Tăng tiến độ lên 1
                         pbar.update(1)
                         
                     except Exception as e:
-                        # Dùng pbar.write để in lỗi mà không làm vỡ giao diện thanh tiến trình
                         pbar.write(f"  ✗ Error in segment {idx}: {e}")
                         pbar.update(1)
 
         print(f"\n  ✅ Parallel extraction complete! Processed {total_segments} segments.")
 
-        # Tổng hợp unique nodes một lần duy nhất ở cuối
         print("  Aggregating unique nodes...", end="\r")
         for triple in self.all_triples:
             self.unique_nodes.add(triple['head'])
@@ -114,7 +102,6 @@ class TripleExtractor:
         """
         Helper function to process a single segment (runs inside a thread).
         """
-        # Chuẩn hóa input
         if isinstance(segment, dict):
             text = segment.get('text', '')
             chunk_id = segment.get('chunk_id', idx)
@@ -124,31 +111,28 @@ class TripleExtractor:
             chunk_id = idx
             doc_id = 'unknown'
             
-        # Gọi LLM API
         try:
             triples_data = call_llm_for_triples(text, use_real_llm=self.use_real_llm)
             status = "success"
-            response_serialized = triples_data  # keep as structure for JSON dump
+            response_serialized = triples_data  
         except Exception as e:
             triples_data = []
             status = "error"
             response_serialized = {"error": str(e)}
         
-        # WRITE per-call JSONL log (chunk, input, response, timestamp, status)
         try:
             log_entry = {
                 "chunk_id": chunk_id,
                 "doc_id": doc_id,
                 "timestamp": datetime.utcnow().isoformat() + "Z",
-                "input": text[:5000],               # truncate large inputs
-                "response": response_serialized,    # structured if available
+                "input": text[:5000],            
+                "response": response_serialized,  
                 "status": status
             }
             _append_phase2_api_log(log_entry)
         except Exception as e:
             print(f"  ⚠ Warning: failed to prepare phase2 log entry: {e}")
         
-        # Xử lý kết quả JSON thành List Dict
         return self._process_triple_response(triples_data, segment_id=chunk_id, doc_id=doc_id)
     
     def _process_triple_response(self, triples_data: Dict, segment_id: int, doc_id: str = 'unknown') -> List[Dict]:
@@ -158,7 +142,6 @@ class TripleExtractor:
         """
         processed_triples = []
         
-        # Helper local function to avoid code duplication
         def add_triple(t_data, t_type, h_type, t_type_str):
             head = (t_data.get('head') or '').strip()
             relation = (t_data.get('relation') or '').strip()
@@ -230,12 +213,9 @@ class TripleExtractor:
 
         t = text.strip()
 
-        # If has [Event: ...] already
         if t.startswith("[Event:") and t.endswith("]"):
             return t
-
-        # Remove accidental quotes
+        
         t = t.strip('"').strip("'")
-
-        # Add standard event wrapper
+        
         return f"[Event: {t}]"

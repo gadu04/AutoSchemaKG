@@ -18,7 +18,7 @@ class UMLSLoader:
     CONTENT_URL = "https://uts-ws.nlm.nih.gov/rest/content/current"
     
     # SỬ DỤNG ĐÚNG DANH SÁCH ĐÃ TEST THÀNH CÔNG TRONG DEBUG
-    # Lưu ý: Không thêm khoảng trắng sau dấu phẩy
+    # Không thêm khoảng trắng sau dấu phẩy
     TARGET_SABS = "SNOMEDCT_US,ICD10CM,RXNORM,LNC,MSH,FMA,GO,HPO,HL7V3.0,NCI,OMIM,HGNC,ATC,ICD10PCS,CVX,HCPCS,MED-RT,CHV"
     
     def __init__(self, api_key: Optional[str] = None):
@@ -33,12 +33,10 @@ class UMLSLoader:
             print("  ⚠ Error: UMLS_API_KEY missing.")
             return
         
-        # Validate ngay khi khởi tạo
         self._validate_api_key()
     
     def _validate_api_key(self) -> bool:
         try:
-            # Test kết nối đơn giản
             params = {"apiKey": self.api_key, "string": "fever", "pageSize": 1}
             resp = requests.get(self.SEARCH_URL, params=params, timeout=10)
             
@@ -60,11 +58,10 @@ class UMLSLoader:
             return []
         
         try:
-            # Cấu hình y hệt debug_umls.py
             params = {
                 "apiKey": self.api_key,
                 "string": concept,
-                "sabs": self.TARGET_SABS,  # Dùng chuỗi cứng, không join list nữa cho chắc
+                "sabs": self.TARGET_SABS, 
                 "searchType": "words",
                 "returnIdType": "concept",
                 "pageSize": 5
@@ -79,7 +76,6 @@ class UMLSLoader:
             data = resp.json()
             results = []
             
-            # Xử lý JSON trả về
             if "result" in data and "results" in data["result"]:
                 for item in data["result"]["results"]:
                     name_val = item.get('name', 'NONE')
@@ -92,7 +88,6 @@ class UMLSLoader:
                         'score': self._calculate_match_score(concept, name_val)
                     })
             
-            # Sắp xếp theo độ khớp
             results.sort(key=lambda x: x['score'], reverse=True)
             return results
         
@@ -101,24 +96,20 @@ class UMLSLoader:
             return []
 
     def get_best_match(self, concept: str, threshold: float = 0.4) -> Optional[Dict]:
-        # Hạ threshold xuống một chút để bắt được nhiều kết quả hơn
         results = self.search_concept(concept)
         if results:
-            # Trả về kết quả đầu tiên (tốt nhất)
             return results[0]
         return None
     
     def _calculate_match_score(self, search_term: str, result_name: str) -> float:
-        # Logic tính điểm đơn giản
         s, r = search_term.lower(), result_name.lower()
         if s == r: return 1.0
         if s in r or r in s: return 0.8
-        return 0.5 # Base score nếu tìm thấy
+        return 0.5 
 
     def is_available(self) -> bool:
         return self.authenticated
 
-    # Giữ hàm này để tương thích ngược nếu code khác có gọi
     def get_concept_details(self, umls_id: str) -> Optional[Dict]:
         return None
     
