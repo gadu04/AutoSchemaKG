@@ -37,6 +37,7 @@ Medical Text → Segmentation → Triple Extraction → Schema Induction → Ont
 
 - Python 3.8 or higher
 - pip package manager
+- Internet connection (for dataset download)
 
 ### Setup
 
@@ -48,7 +49,15 @@ Medical Text → Segmentation → Triple Extraction → Schema Induction → Ont
 pip install -r requirements.txt
 ```
 
-3. (Optional) Set up Together AI API key for real LLM calls:
+3. Download required dataset:
+
+```bash
+python install_dataset.py
+```
+
+This step will automatically download all required input data into the `data/` directory.
+
+4. (Optional) Set up Together AI API key for real LLM calls:
 
 ```bash
 # Windows PowerShell
@@ -60,9 +69,12 @@ export TOGETHER_API_KEY="your_api_key_here"
 export USE_REAL_LLM="true"
 ```
 
+
 ## Usage
 
 ### Quick Start
+
+#### Step 1: Run the main pipeline (Knowledge Graph construction)
 
 Run the framework with default stub mode:
 
@@ -70,12 +82,40 @@ Run the framework with default stub mode:
 python main.py
 ```
 
-This will:
+This step will:
 - Load or create sample medical text
 - Extract triples using stubbed LLM calls
-- Induce concepts and ground to ontologies
-- Build the final knowledge graph
-- Generate visualization and reports in `output/` directory
+- Induce concepts and ground them to ontologies
+- Construct the knowledge graph in file-based formats
+- Generate visualizations and reports in the `output/` directory
+
+---
+
+#### Step 2: Push the Knowledge Graph into Neo4j (Required)
+
+After `main.py` finishes, run the Neo4j export script:
+
+```bash
+python pipeline/kg_build.py
+```
+
+This step will:
+- Load the generated knowledge graph from the `output/` directory
+- Convert nodes and edges into Neo4j-compatible representations
+- Create nodes, relationships, and properties in Neo4j
+- Enable graph querying and downstream reasoning using Cypher
+
+> ⚠️ **Important**: Ensure that the Neo4j service is running before executing this step.
+
+---
+
+### Notes
+
+- `main.py` builds the knowledge graph but **does not persist it to Neo4j**
+- `kg_build.py` is responsible for **graph persistence and database population**
+- You can re-run `kg_build.py` independently without re-running the entire pipeline
+- Neo4j is used as the backend graph store for downstream evaluation and reasoning (e.g., Think-on-Graph, LLM-based querying)
+
 
 ### Using Real LLM API
 
@@ -99,28 +139,37 @@ Place your medical text file in `data/sample_medical_text.txt` or modify the `in
 ```
 Framework/
 ├── main.py                          # Main orchestrator
+├── install_dataset.py               # Dataset download & setup script
 ├── pipeline/
 │   ├── __init__.py
 │   ├── phase_1_ingestion.py         # Phase 1: Document loading (STUB)
 │   ├── phase_2_triple_extraction.py # Phase 2: Triple extraction (CORE)
 │   ├── phase_3_schema_induction.py  # Phase 3: Concept induction (CORE/STUB)
-│   └── phase_4_kg_construction.py   # Phase 4: Graph building (CORE)
+│   ├── phase_4_kg_construction.py   # Phase 4: Graph building (CORE)
+│   ├── kg_build.py                  # Low-level KG construction utilities
+│   └── umls_loader.py               # UMLS ontology loading & concept mapping
 ├── llm_api/
 │   ├── __init__.py
 │   ├── interface.py                 # API router
 │   ├── stubs.py                     # Stubbed LLM implementations
 │   └── real_api.py                  # Real Together AI implementation
+├── evaluate/
+│   ├── BERTScore_eval.py            # BERTScore-based KG/text evaluation
+│   ├── Think_on_Graph.py            # Think-on-Graph reasoning evaluation
+│   ├── ToG_LLM_eval.py              # LLM-based ToG evaluation
+│   └── llm_direct.py                # Direct LLM baseline evaluation
 ├── utils/
 │   ├── __init__.py
 │   └── visualization.py             # Visualization and reporting
 ├── data/
-│   └── sample_medical_text.txt      # Sample input (auto-generated)
+│   └── sample_medical_text.txt      # Sample input (auto-generated or downloaded)
 ├── output/
 │   ├── knowledge_graph.png          # Graph visualization
 │   ├── knowledge_graph.json         # Graph in JSON format
 │   └── knowledge_graph.graphml      # Graph in GraphML format
 ├── requirements.txt
 └── README.md
+
 ```
 
 ## Module Descriptions
@@ -248,39 +297,6 @@ After execution, the following files are generated in the `output/` directory:
 3. **knowledge_graph.graphml**: Graph in GraphML format for analysis tools
 4. **knowledge_graph_edges.txt**: Simple edge list format
 
-## Implementation Notes
-
-### Stub vs. Real Mode
-
-The framework supports two modes:
-
-**Stub Mode** (Default):
-- No API key required
-- Returns deterministic mock data
-- Fast execution for testing
-- Useful for development and debugging
-
-**Real Mode**:
-- Requires Together AI API key
-- Makes actual LLM API calls
-- Variable execution time
-- Production-quality extraction
-
-### Prompting Strategy
-
-The framework uses specialized prompts for:
-
-1. **Triple Extraction**: Instructs LLM to act as medical domain expert and extract structured triples with confidence scores
-
-2. **Concept Induction**: Instructs LLM to act as ontologist and generate abstract, high-level concept descriptions
-
-Both prompts enforce strict JSON output format for reliable parsing.
-
-### Error Handling
-
-- Fallback to stub mode if API calls fail
-- Graceful handling of missing nodes or malformed responses
-- Detailed error messages and warnings
 
 ## Extending the Framework
 
@@ -306,37 +322,6 @@ Modify `llm_api/real_api.py` to use:
 - OpenAI API
 - Local LLM endpoints
 
-## Dependencies
-
-Core dependencies:
-- `networkx`: Graph construction and analysis
-- `together`: Together AI API client
-- `matplotlib`: Graph visualization (optional)
-
-See `requirements.txt` for complete list.
-
-## Troubleshooting
-
-### "TOGETHER_API_KEY not set" Error
-
-Solution: Export your API key:
-```bash
-$env:TOGETHER_API_KEY="your_key"
-```
-
-### Import Errors
-
-Solution: Ensure you're running from the project root and all dependencies are installed:
-```bash
-pip install -r requirements.txt
-```
-
-### Visualization Not Generated
-
-Solution: Install matplotlib:
-```bash
-pip install matplotlib
-```
 
 ## Based On
 
