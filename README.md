@@ -43,6 +43,10 @@ Medical Text → Segmentation → Triple Extraction → Schema Induction → Ont
 
 1. Clone or download this repository
 
+```bash
+git clone https://github.com/gadu04/Medical-SchemaKG
+```
+
 2. Install required dependencies:
 
 ```bash
