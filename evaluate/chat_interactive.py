@@ -30,7 +30,7 @@ class LLMGenerator:
                 print("✓ Connected to LM Studio")
             except Exception as e:
                 print(f"⚠ Warning: Could not connect to LM Studio: {e}")
-                print("  Falling back to stub mode")
+                print("  Please ensure LM Studio is running")
                 self.use_real_llm = False
         
     def generate_response(self, messages: List[Dict]) -> str:
@@ -316,7 +316,7 @@ Detailed Answer:"""
         
         try:
             answer = self.llm_generator.generate_response(messages)
-            # If LLM is in stub mode or returns generic response, show triples too
+            # If LLM is not available or returns generic response, show triples too
             if answer in ["Response", "Error: Could not generate response from LLM"] or len(answer) < 50:
                 triples_str = "\n".join([f"  {i+1}. {t}" for i, t in enumerate(triples)])
                 answer = f"{answer}\n\nKnowledge Graph Triples:\n{triples_str}"

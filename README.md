@@ -6,10 +6,10 @@ A Python prototype framework for building ontology-grounded medical knowledge gr
 
 The Medical-SchemaKG Framework implements a four-phase pipeline to construct knowledge graphs from medical text documents:
 
-1. **Phase 1: Document Ingestion & Preprocessing** (Stubbed)
-2. **Phase 2: Triple Extraction** (Core Module)
-3. **Phase 3: Hybrid Schema Induction & Ontology Grounding** (Partial)
-4. **Phase 4: Knowledge Graph Construction** (Core Module)
+1. **Phase 1: Document Ingestion & Preprocessing**
+2. **Phase 2: Triple Extraction**
+3. **Phase 3: Hybrid Schema Induction & Ontology Grounding**
+4. **Phase 4: Knowledge Graph Construction**
 
 ## Architecture
 
@@ -61,16 +61,16 @@ python install_dataset.py
 
 This step will automatically download all required input data into the `data/` directory.
 
-4. (Optional) Set up Together AI API key for real LLM calls:
+4. Set up LM Studio API:
 
 ```bash
 # Windows PowerShell
-$env:TOGETHER_API_KEY="your_api_key_here"
-$env:USE_REAL_LLM="true"
+$env:LM_STUDIO_BASE_URL="http://localhost:1234/v1"
+$env:MODEL_NAME="local-model"
 
 # Linux/Mac
-export TOGETHER_API_KEY="your_api_key_here"
-export USE_REAL_LLM="true"
+export LM_STUDIO_BASE_URL="http://localhost:1234/v1"
+export MODEL_NAME="local-model"
 ```
 
 
@@ -80,7 +80,7 @@ export USE_REAL_LLM="true"
 
 #### Step 1: Run the main pipeline (Knowledge Graph construction)
 
-Run the framework with default stub mode:
+Run the framework:
 
 ```bash
 python main.py
@@ -88,7 +88,7 @@ python main.py
 
 This step will:
 - Load or create sample medical text
-- Extract triples using stubbed LLM calls
+- Extract triples using LLM API calls
 - Induce concepts and ground them to ontologies
 - Construct the knowledge graph in file-based formats
 - Generate visualizations and reports in the `output/` directory
@@ -122,7 +122,7 @@ This step will:
 - Create nodes, relationships, and properties in Neo4j
 - Enable graph querying and downstream reasoning using Cypher
 
-> ⚠️ **Important**: Ensure that the Neo4j service is running before executing this step.
+>  **Important**: Ensure that the Neo4j service is running before executing this step.
 
 ---
 
@@ -137,12 +137,12 @@ This step will:
 
 ### Using Real LLM API
 
-To use the actual Together AI API instead of stubs:
+To configure LM Studio:
 
 ```bash
 # Set environment variables
-$env:TOGETHER_API_KEY="your_together_ai_key"
-$env:USE_REAL_LLM="true"
+$env:LM_STUDIO_BASE_URL="http://localhost:1234/v1"
+$env:MODEL_NAME="local-model"
 
 # Run the framework
 python main.py
@@ -160,17 +160,16 @@ Framework/
 ├── install_dataset.py               # Dataset download & setup script
 ├── pipeline/
 │   ├── __init__.py
-│   ├── phase_1_ingestion.py         # Phase 1: Document loading (STUB)
-│   ├── phase_2_triple_extraction.py # Phase 2: Triple extraction (CORE)
-│   ├── phase_3_schema_induction.py  # Phase 3: Concept induction (CORE/STUB)
-│   ├── phase_4_kg_construction.py   # Phase 4: Graph building (CORE)
+│   ├── phase_1_ingestion.py         # Phase 1: Document loading
+│   ├── phase_2_triple_extraction.py # Phase 2: Triple extraction
+│   ├── phase_3_schema_induction.py  # Phase 3: Concept induction
+│   ├── phase_4_kg_construction.py   # Phase 4: Graph building
 │   ├── kg_build.py                  # Low-level KG construction utilities
 │   └── umls_loader.py               # UMLS ontology loading & concept mapping
 ├── llm_api/
 │   ├── __init__.py
-│   ├── interface.py                 # API router
-│   ├── stubs.py                     # Stubbed LLM implementations
-│   └── real_api.py                  # Real Together AI implementation
+│   ├── interface.py                 # API interface
+│   └── real_api.py                  # LM Studio API implementation
 ├── evaluate/
 │   ├── BERTScore_eval.py            # BERTScore-based KG/text evaluation
 │   ├── Think_on_Graph.py            # Think-on-Graph reasoning evaluation
@@ -192,19 +191,19 @@ Framework/
 
 ## Module Descriptions
 
-### Phase 1: Document Ingestion (STUB)
+### Phase 1: Document Ingestion
 
 **File**: `pipeline/phase_1_ingestion.py`
 
-**Status**: Stubbed (teammate responsibility)
+**Status**: Implemented
 
-**Function**: Simulates OCR and text preprocessing by reading pre-cleaned `.txt` files and segmenting them into paragraphs.
+**Function**: Handles OCR and text preprocessing by reading `.txt` files and segmenting them into paragraphs.
 
-### Phase 2: Triple Extraction (CORE)
+### Phase 2: Triple Extraction
 
 **File**: `pipeline/phase_2_triple_extraction.py`
 
-**Status**: Core implementation
+**Status**: Implemented
 
 **Function**: Extracts three types of triples (E-E, E-Ev, Ev-Ev) from text segments using LLM API. Collects all unique nodes for downstream processing.
 
@@ -214,19 +213,17 @@ Framework/
 
 **File**: `pipeline/phase_3_schema_induction.py`
 
-**Status**: 
-- Part 3a (Concept Induction): Core implementation
-- Part 3b (Ontology Grounding): Stubbed (teammate responsibility)
+**Status**: Implemented
 
 **Functions**:
 - `dynamically_induce_concepts()`: Uses LLM to generate abstract concepts
-- `ground_concepts_to_ontology()`: Simulates UMLS/SNOMED CT mapping
+- `ground_concepts_to_ontology()`: Maps concepts to UMLS/SNOMED CT
 
-### Phase 4: Knowledge Graph Construction (CORE)
+### Phase 4: Knowledge Graph Construction
 
 **File**: `pipeline/phase_4_kg_construction.py`
 
-**Status**: Core implementation
+**Status**: Implemented
 
 **Function**: Builds NetworkX MultiDiGraph from triples and grounded nodes. Adds rich metadata and attributes to nodes and edges.
 
@@ -234,12 +231,11 @@ Framework/
 
 ### LLM API Interface
 
-**Files**: `llm_api/interface.py`, `llm_api/stubs.py`, `llm_api/real_api.py`
+**Files**: `llm_api/interface.py`, `llm_api/real_api.py`
 
 **Functions**:
-- Routes between stub and real implementations
 - Implements detailed prompts for triple extraction and concept induction
-- Uses Together AI's Llama-3.3-70B-Instruct-Turbo-Free model
+- Uses local LM Studio for LLM inference
 - Enforces structured JSON output format
 
 ## Configuration
@@ -258,9 +254,9 @@ The framework is fully configurable via environment variables in the `.env` file
 ### Environment Variables
 
 #### LLM Configuration
-- `USE_REAL_LLM`: Set to `true` for real API, `false` for stubs (default: `false`)
-- `TOGETHER_API_KEY`: Your Together AI API key (required if `USE_REAL_LLM=true`)
-- `MODEL_NAME`: LLM model to use (default: `meta-llama/Llama-3.3-70B-Instruct-Turbo-Free`)
+- `USE_REAL_LLM`: Set to `true` to use LM Studio (default: `true`)
+- `LM_STUDIO_BASE_URL`: LM Studio API URL (default: `http://localhost:1234/v1`)
+- `MODEL_NAME`: LLM model name in LM Studio (default: `local-model`)
 - `MODEL_TEMPERATURE`: Model temperature 0.0-1.0 (default: `0.1`)
 - `MODEL_MAX_TOKENS`: Maximum response tokens (default: `2000`)
 
@@ -271,12 +267,12 @@ The framework is fully configurable via environment variables in the `.env` file
 ### Example .env Configuration
 
 ```ini
-# Use real LLM
+# Use LM Studio
 USE_REAL_LLM=true
-TOGETHER_API_KEY=your-actual-api-key
+LM_STUDIO_BASE_URL=http://localhost:1234/v1
 
 # Model settings
-MODEL_NAME=meta-llama/Llama-3.3-70B-Instruct-Turbo-Free
+MODEL_NAME=local-model
 MODEL_TEMPERATURE=0.1
 MODEL_MAX_TOKENS=2000
 
@@ -287,20 +283,15 @@ OUTPUT_DIR=output
 
 ### Quick Configuration Options
 
-**Option 1: Use Stub Mode (No API Key Required)**
-```ini
-USE_REAL_LLM=false
-```
-
-**Option 2: Use Real LLM with Custom Model**
+**Option 1: Use LM Studio with Custom Model**
 ```ini
 USE_REAL_LLM=true
-TOGETHER_API_KEY=your-key
-MODEL_NAME=meta-llama/Llama-3.3-70B-Instruct-Turbo-Free
+LM_STUDIO_BASE_URL=http://localhost:1234/v1
+MODEL_NAME=your-model-name
 MODEL_TEMPERATURE=0.2
 ```
 
-**Option 3: Custom Input/Output Paths**
+**Option 2: Custom Input/Output Paths**
 ```ini
 INPUT_FILE=data/my_medical_notes.txt
 OUTPUT_DIR=results

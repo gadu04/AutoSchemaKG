@@ -30,13 +30,13 @@ class LLMGenerator:
                 print("✓ Connected to LM Studio")
             except Exception as e:
                 print(f"⚠ Warning: Could not connect to LM Studio: {e}")
-                print("  Falling back to stub mode")
+                print("  Please ensure LM Studio is running")
                 self.use_real_llm = False
         
     def generate_response(self, messages: List[Dict]) -> str:
         """Generate response from LLM."""
         if not self.use_real_llm:
-            # Stub response for testing
+            # Return generic response for testing without LLM
             last_message = messages[-1]["content"].lower()
             if "named entities" in last_message or "extract" in last_message:
                 return '{"entities": []}'

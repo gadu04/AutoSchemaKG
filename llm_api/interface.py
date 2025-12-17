@@ -1,30 +1,23 @@
 """
 LLM API Interface
 =================
-Provides unified interface for both stubbed and real LLM API calls.
-Automatically routes to stub or real implementation based on configuration.
+Provides interface for LLM API calls using LM Studio.
 """
 
 from typing import Dict, List
-from llm_api.stubs import (
-    stub_call_llm_for_triples,
-    stub_call_llm_for_concepts
-)
 from llm_api.real_api import (
     real_call_llm_for_triples,
     real_call_llm_for_concepts
 )
 
 
-def call_llm_for_triples(text_segment: str, use_real_llm: bool = False) -> Dict:
+def call_llm_for_triples(text_segment: str, use_real_llm: bool = True) -> Dict:
     """
     Extract triples from a text segment using LLM.
     
-    Routes to either stub or real implementation based on configuration.
-    
     Args:
         text_segment (str): Text to extract triples from
-        use_real_llm (bool): If True, use real API; if False, use stub
+        use_real_llm (bool): Deprecated parameter, kept for compatibility
         
     Returns:
         Dict: Extracted triples in format:
@@ -36,29 +29,22 @@ def call_llm_for_triples(text_segment: str, use_real_llm: bool = False) -> Dict:
                 'event_event': [...]
             }
     """
-    if use_real_llm:
-        return real_call_llm_for_triples(text_segment)
-    else:
-        return stub_call_llm_for_triples(text_segment)
+    return real_call_llm_for_triples(text_segment)
 
 
-def call_llm_for_concepts(node_list: List[str], use_real_llm: bool = False, triples_list: List[Dict] = None) -> Dict[str, str]:
+def call_llm_for_concepts(node_list: List[str], use_real_llm: bool = True, triples_list: List[Dict] = None) -> Dict[str, str]:
     """
     Generate induced concepts for a list of nodes using LLM.
     
-    Routes to either stub or real implementation based on configuration.
     Implements AutoSchemaKG approach with separate handling for entities and events.
     
     Args:
         node_list (List[str]): List of node names to generate concepts for
-        use_real_llm (bool): If True, use real API; if False, use stub
-        triples_list (List[Dict], optional): List of triples for context extraction (used in real mode)
+        use_real_llm (bool): Deprecated parameter, kept for compatibility
+        triples_list (List[Dict], optional): List of triples for context extraction
         
     Returns:
         Dict[str, str]: Mapping of node name to induced concept phrases
             Example: {"Metformin": "medication, drug, pharmaceutical, treatment"}
     """
-    if use_real_llm:
-        return real_call_llm_for_concepts(node_list, triples_list)
-    else:
-        return stub_call_llm_for_concepts(node_list)
+    return real_call_llm_for_concepts(node_list, triples_list)

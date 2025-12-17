@@ -1,13 +1,13 @@
-"""
+﻿"""
 Medical-SchemaKG Framework - Main Orchestrator
 ================================================
 Entry point for the four-phase pipeline that builds a Knowledge Graph from medical text.
 
 Pipeline Phases:
-1. Document Ingestion & Preprocessing (Stubbed)
-2. Triple Extraction (Core Module)
-3. Hybrid Schema Induction & Ontology Grounding (Partial Stub)
-4. Knowledge Graph Construction (Core Module)
+1. Document Ingestion & Preprocessing
+2. Triple Extraction
+3. Hybrid Schema Induction & Ontology Grounding
+4. Knowledge Graph Construction
 """
 
 import os
@@ -60,7 +60,7 @@ def main():
     lm_studio_url = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")
     
     print(f"Configuration:")
-    print(f"  - LLM Mode: {'REAL API (LM Studio)' if use_real_llm else 'STUBBED'}")
+    print(f"  - LLM Mode: REAL API (LM Studio)")
     if use_real_llm:
         print(f"  - LM Studio URL: {lm_studio_url}")
         print(f"  - Model: {model_name}")
@@ -102,7 +102,7 @@ def main():
             return
 
     else:
-        # PHASE 1: DOCUMENT INGESTION & PREPROCESSING (STUBBED)
+        # PHASE 1: DOCUMENT INGESTION & PREPROCESSING
         print("-" * 80)
         print("PHASE 1: DOCUMENT INGESTION & PREPROCESSING")
         print("-" * 80)
@@ -197,7 +197,7 @@ def main():
         traceback.print_exc()
         return
     
-    # Part 3b: Ontology Grounding (Stubbed)
+    # Part 3b: Ontology Grounding
     print("Status: Part 3b - Grounding concepts to medical ontologies...")
     try:
         grounded_nodes = ground_concepts_to_ontology(induced_concepts)

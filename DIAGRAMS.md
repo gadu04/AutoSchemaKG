@@ -20,11 +20,11 @@ This document contains ASCII diagrams to help visualize the framework architectu
                                     │
                                     ▼
 ╔═══════════════════════════════════════════════════════════════════════╗
-║                        PHASE 1: INGESTION (STUB)                      ║
+║                        PHASE 1: INGESTION                             ║
 ║  ┌─────────────────────────────────────────────────────────────────┐  ║
 ║  │  • Load text file                                               │  ║
 ║  │  • Segment into paragraphs                                      │  ║
-║  │  • Clean and normalize (simulated)                              │  ║
+║  │  • Clean and normalize                                          │  ║
 ║  └─────────────────────────────────────────────────────────────────┘  ║
 ╚═══════════════════════════════════════════════════════════════════════╝
                                     │
@@ -33,7 +33,7 @@ This document contains ASCII diagrams to help visualize the framework architectu
                                     │
                                     ▼
 ╔═══════════════════════════════════════════════════════════════════════╗
-║                    PHASE 2: TRIPLE EXTRACTION (CORE)                  ║
+║                    PHASE 2: TRIPLE EXTRACTION                         ║
 ║  ┌─────────────────────────────────────────────────────────────────┐  ║
 ║  │  For each text segment:                                         │  ║
 ║  │    1. Call LLM with extraction prompt                           │  ║
@@ -41,9 +41,7 @@ This document contains ASCII diagrams to help visualize the framework architectu
 ║  │    3. Collect E-E, E-Ev, Ev-Ev triples                         │  ║
 ║  │    4. Track unique nodes                                        │  ║
 ║  │                                                                  │  ║
-║  │  LLM API Routes:                                                │  ║
-║  │    ├─► Stub Mode (mock data)                                   │  ║
-║  │    └─► Real Mode (Together AI)                                 │  ║
+║  │  LLM API Route: LM Studio                                       │  ║
 ║  └─────────────────────────────────────────────────────────────────┘  ║
 ╚═══════════════════════════════════════════════════════════════════════╝
                                     │
@@ -56,7 +54,7 @@ This document contains ASCII diagrams to help visualize the framework architectu
 ║              PHASE 3: SCHEMA INDUCTION & GROUNDING                    ║
 ║                                                                        ║
 ║  ┌──────────────────────────────────────────────────────────────┐    ║
-║  │  PART 3a: CONCEPT INDUCTION (CORE)                           │    ║
+  │  PART 3a: CONCEPT INDUCTION                                  │    ║
 ║  │  ┌────────────────────────────────────────────────────────┐  │    ║
 ║  │  │  For each unique node:                                  │  │    ║
 ║  │  │    • Call LLM with concept prompt                       │  │    ║
@@ -68,10 +66,10 @@ This document contains ASCII diagrams to help visualize the framework architectu
 ║                  Dict[str, str] - induced_concepts                    ║
 ║                              ▼                                         ║
 ║  ┌──────────────────────────────────────────────────────────────┐    ║
-║  │  PART 3b: ONTOLOGY GROUNDING (STUB)                          │    ║
-║  │  ┌────────────────────────────────────────────────────────┐  │    ║
-║  │  │  For each induced concept:                              │  │    ║
-║  │  │    • Map to UMLS/SNOMED CT (simulated)                  │  │    ║
+  │  PART 3b: ONTOLOGY GROUNDING                                 │    ║
+  │  ┌────────────────────────────────────────────────────────┐  │    ║
+  │  │  For each induced concept:                              │  │    ║
+  │  │    • Map to UMLS/SNOMED CT                              │  │    ║
 ║  │  │    • Add ontology ID and semantic type                  │  │    ║
 ║  │  │  Example: → UMLS:C0025598, "Pharmacologic Substance"    │  │    ║
 ║  │  └────────────────────────────────────────────────────────┘  │    ║
@@ -84,7 +82,7 @@ This document contains ASCII diagrams to help visualize the framework architectu
                                     │
                                     ▼
 ╔═══════════════════════════════════════════════════════════════════════╗
-║              PHASE 4: KNOWLEDGE GRAPH CONSTRUCTION (CORE)             ║
+║              PHASE 4: KNOWLEDGE GRAPH CONSTRUCTION                    ║
 ║  ┌─────────────────────────────────────────────────────────────────┐  ║
 ║  │  1. Create NetworkX MultiDiGraph                               │  ║
 ║  │  2. Add all nodes with grounded attributes                      │  ║
@@ -158,7 +156,7 @@ TEXT SEGMENT:
                     │                                            │
                     │                              ┌─────────────┴──────────┐
                     │                              ▼                        ▼
-                    │                     GROUNDED NODES          MOCK UMLS IDs
+                    │                     GROUNDED NODES          UMLS IDs
                     │                ┌──────────────────────┐  ┌───────────────┐
                     │                │ Metformin:           │  │ UMLS:C0025598 │
                     │                │   concept: "..."     │  │ UMLS:C0011860 │
@@ -235,31 +233,20 @@ EVENT-EVENT (Ev-Ev) TRIPLES:
                         │    (interface.py)    │
                         └──────────┬───────────┘
                                    │
-                    ┌──────────────┴──────────────┐
-                    │                             │
-                    ▼                             ▼
-         ┌─────────────────────┐      ┌─────────────────────┐
-         │   USE_REAL_LLM =    │      │   USE_REAL_LLM =    │
-         │      false           │      │      true            │
-         └──────────┬───────────┘      └──────────┬───────────┘
-                    │                             │
-                    ▼                             ▼
-         ┌─────────────────────┐      ┌─────────────────────┐
-         │  stub_call_llm_*()  │      │  real_call_llm_*()  │
-         │    (stubs.py)        │      │    (real_api.py)    │
-         └──────────┬───────────┘      └──────────┬───────────┘
-                    │                             │
-                    ▼                             ▼
-         ┌─────────────────────┐      ┌─────────────────────┐
-         │  Return hard-coded  │      │  Call Together AI   │
-         │  mock data          │      │  API with prompt    │
-         │                     │      │                     │
-         │  • Fast (instant)   │      │  • Real extraction  │
-         │  • Deterministic    │      │  • 3-5 sec/call     │
-         │  • No API key       │      │  • Requires key     │
-         └─────────────────────┘      └─────────────────────┘
-                    │                             │
-                    └──────────────┬──────────────┘
+                                   ▼
+                        ┌─────────────────────┐
+                        │  real_call_llm_*()  │
+                        │    (real_api.py)    │
+                        └──────────┬───────────┘
+                                   │
+                                   ▼
+                        ┌─────────────────────┐
+                        │  Call LM Studio     │
+                        │  API with prompt    │
+                        │                     │
+                        │  • Real extraction  │
+                        │  • 3-5 sec/call     │
+                        └─────────────────────┘
                                    │
                                    ▼
                         ┌──────────────────────┐
@@ -285,8 +272,7 @@ main.py
    │                                          │
    ├─► llm_api/                              │
    │      ├─► interface.py ◄──────────────────┘
-   │      ├─► stubs.py
-   │      └─► real_api.py ──► Together AI API
+   │      └─► real_api.py ──► LM Studio API
    │
    └─► utils/
           └─► visualization.py ──► matplotlib
@@ -334,49 +320,10 @@ GRAPH PROPERTIES:
 
 ---
 
-## Execution Flow (Stub Mode)
+## Execution Flow
 
 ```
 USER RUNS: python main.py
-          │
-          ▼
-    ┌──────────────┐
-    │  main.py     │
-    │  main()      │
-    └──────┬───────┘
-           │
-           ├─► Phase 1 (0.1s)
-           │   └─► Load sample_medical_text.txt → 8 segments
-           │
-           ├─► Phase 2 (0.8s)
-           │   ├─► For each segment:
-           │   │   └─► stub_call_llm_for_triples() → instant mock data
-           │   └─► Collect: 24 triples, 35 nodes
-           │
-           ├─► Phase 3a (0.1s)
-           │   └─► stub_call_llm_for_concepts() → instant concepts
-           │
-           ├─► Phase 3b (0.1s)
-           │   └─► ground_concepts_to_ontology() → mock UMLS IDs
-           │
-           ├─► Phase 4 (0.2s)
-           │   └─► build_knowledge_graph() → NetworkX graph
-           │
-           └─► Output (0.5s)
-               ├─► Console summary
-               ├─► knowledge_graph.png
-               ├─► knowledge_graph.json
-               └─► knowledge_graph.graphml
-
-TOTAL TIME: ~2 seconds
-```
-
----
-
-## Execution Flow (Real LLM Mode)
-
-```
-USER RUNS: python main.py (with USE_REAL_LLM=true)
           │
           ▼
     ┌──────────────┐
@@ -391,21 +338,20 @@ USER RUNS: python main.py (with USE_REAL_LLM=true)
            │   ├─► For each of 8 segments:
            │   │   ├─► real_call_llm_for_triples()
            │   │   │   ├─► Build extraction prompt
-           │   │   │   ├─► Call Together AI API (~3s)
+           │   │   │   ├─► Call LM Studio API (~3s)
            │   │   │   └─► Parse JSON response
-           │   │   └─► Fallback to stub on error
            │   └─► Collect: ~40 triples, ~50 nodes (varies)
            │
            ├─► Phase 3a (15s)
            │   ├─► real_call_llm_for_concepts()
            │   │   ├─► Batch process (20 nodes/call)
            │   │   ├─► Build concept prompt
-           │   │   ├─► Call Together AI API (~3s/batch)
+           │   │   ├─► Call LM Studio API (~3s/batch)
            │   │   └─► Parse JSON response
            │   └─► Generate: 50 concepts
            │
            ├─► Phase 3b (0.1s)
-           │   └─► ground_concepts_to_ontology() → mock UMLS IDs
+           │   └─► ground_concepts_to_ontology() → UMLS IDs
            │
            ├─► Phase 4 (0.3s)
            │   └─► build_knowledge_graph() → NetworkX graph
@@ -429,16 +375,15 @@ Framework/
 ├─── Core Pipeline ───────────────────────────────────┐
 │    ├── main.py (orchestrator)                       │
 │    └── pipeline/                                    │
-│        ├── phase_1_ingestion.py (STUB)             │
-│        ├── phase_2_triple_extraction.py (CORE)     │
-│        ├── phase_3_schema_induction.py (CORE/STUB) │
-│        └── phase_4_kg_construction.py (CORE)       │
+│        ├── phase_1_ingestion.py                     │
+│        ├── phase_2_triple_extraction.py             │
+│        ├── phase_3_schema_induction.py              │
+│        └── phase_4_kg_construction.py               │
 │                                                      │
 ├─── LLM Integration ─────────────────────────────────┤
 │    └── llm_api/                                     │
 │        ├── interface.py (router)                    │
-│        ├── stubs.py (mock data)                     │
-│        └── real_api.py (Together AI)                │
+│        └── real_api.py (LM Studio)                  │
 │                                                      │
 ├─── Utilities ───────────────────────────────────────┤
 │    └── utils/                                        │
