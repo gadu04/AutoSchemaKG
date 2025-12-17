@@ -1,3 +1,3 @@
 Timestamp,Model,Samples,Precision,Recall,F1_Score,Device,Model_Type
-2025-12-08 19:32:00,ToG,645,0.4713,0.5400,0.4981,cuda,microsoft/deberta-xlarge-mnli
-2025-12-08 19:32:00,LLM (Baseline),645,0.5668,0.5582,0.5574,cuda,microsoft/deberta-xlarge-mnli
+12/8/2025 19:32,ToG,645,0.5696,0.5098,0.5238,cuda,microsoft/deberta-xlarge-mnli
+12/8/2025 19:32,LLM (Baseline),645,0.5436,0.5079,0.5126,cuda,microsoft/deberta-xlarge-mnli
