@@ -16,10 +16,10 @@ The Medical-SchemaKG Framework implements a four-phase pipeline to construct kno
 </p>
 
 
-1. **Phase 1: Document Ingestion & Preprocessing**
-2. **Phase 2: Triple Extraction**
-3. **Phase 3: Hybrid Schema Induction & Ontology Grounding**
-4. **Phase 4: Knowledge Graph Construction**
+- **Phase 1: Data Ingestion & Preprocessing**
+- **Phase 2: Triple Extraction**
+- **Phase 3: Schema Induction & Ontology Grounding**
+- **Phase 4: Knowledge Graph Construction**
 
 ## Architecture
 
